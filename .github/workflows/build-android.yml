@@ -1,0 +1,41 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Restore
+        run: dotnet restore SimpleAranet4Client/SimpleAranet4Client.csproj
+
+      - name: Build APK
+        run: >
+          dotnet publish
+          SimpleAranet4Client/SimpleAranet4Client.csproj
+          -f net10.0-android
+          -c Release
+          -p:AndroidPackageFormat=apk
+          --no-restore
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimpleAranet4Client-APK
+          path: SimpleAranet4Client/bin/Release/net10.0-android/publish/*.apk
