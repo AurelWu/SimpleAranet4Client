@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to attach the APK to a release on tag builds
+  contents: write   # needed to create the release
+
+# Two pushes in quick succession would otherwise race while replacing the same release.
+concurrency:
+  group: build-android
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -55,15 +58,15 @@ jobs:
           path: artifact/SimpleAranet4Client.apk
           if-no-files-found: error
 
-      # GitHub always zips workflow artifacts on download, whatever they contain, so a
-      # single-file artifact still arrives as a .zip. A release asset does not, so pushing
-      # a tag (git tag v1.0 && git push origin v1.0) gives a direct .apk download link.
-      - name: Attach the APK to a release
-        if: startsWith(github.ref, 'refs/tags/')
+      # Workflow artifacts are always zipped on download, release assets are not. The release
+      # is deleted and recreated so its tag moves to the current commit, which keeps
+      # releases/latest/download/SimpleAranet4Client.apk pointing at the newest build.
+      # It must not be a prerelease: the /releases/latest/ redirect skips those.
+      - name: Refresh the latest release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "$GITHUB_REF_NAME"
-          artifact/SimpleAranet4Client.apk
-          --title "$GITHUB_REF_NAME"
-          --generate-notes
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest artifact/SimpleAranet4Client.apk \
+            --title "Latest build" \
+            --notes "Built from main at ${GITHUB_SHA::7}."
