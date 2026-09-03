@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release-only manifest overlay.
+
+  The manifest merger unions the permissions of every dependency, so a library can add INTERNET
+  even though the app never declares it. tools:node="remove" makes the removal win that merge.
+
+  This is Release-only on purpose: .NET for Android adds INTERNET to Debug builds because the
+  debugger connects over a TCP socket, so removing it there would break on-device debugging.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+  <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+</manifest>

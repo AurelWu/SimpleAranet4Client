@@ -31,7 +31,7 @@
 		<ApplicationTitle>SimpleAranet4Client</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.simplearanet4client</ApplicationId>
+		<ApplicationId>com.aurelwuensch.simplearanet4client</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -63,6 +63,11 @@
 
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<!-- Guarantees the released APK cannot ask for network access, whatever a dependency merges in. -->
+	<ItemGroup Condition="'$(Configuration)' == 'Release' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<AndroidManifestOverlay Include="Platforms\Android\AndroidManifest.Release.xml" />
 	</ItemGroup>
 
 	<ItemGroup>
