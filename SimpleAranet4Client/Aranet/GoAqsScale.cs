@@ -7,8 +7,9 @@ namespace SimpleAranet4Client.Aranet
     /// used on indoorco2map.com - boundaries and colours are taken from that site's js/legend.js and
     /// js/main.js, so the two stay in step.
     ///
-    /// Note that the site labels the score bands 10-8 / 7-4 / 3-0 while the GO AQS conference deck
-    /// gives 10-8 / 7-5 / 4-0. The site is the source used here.
+    /// Only the level names are surfaced, not the 0-10 score ranges behind them: the site labels
+    /// those 10-8 / 7-4 / 3-0 while the GO AQS conference deck gives 10-8 / 7-5 / 4-0. The ppm
+    /// boundaries are the same either way.
     /// </summary>
     public static class GoAqsScale
     {
@@ -41,12 +42,11 @@ namespace SimpleAranet4Client.Aranet
             _ => UnhealthyColor
         };
 
-        /// <summary>Name and score range, as shown in the map legend.</summary>
         public static string TitleFor(GoAqsLevel level) => level switch
         {
-            GoAqsLevel.Good => "Good (10-8)",
-            GoAqsLevel.Moderate => "Moderate (7-4)",
-            _ => "Unhealthy (3-0)"
+            GoAqsLevel.Good => "Good",
+            GoAqsLevel.Moderate => "Moderate",
+            _ => "Unhealthy"
         };
 
         public static string RangeFor(GoAqsLevel level) => level switch

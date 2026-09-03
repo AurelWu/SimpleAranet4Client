@@ -74,7 +74,8 @@
                            VerticalOptions="Center" HorizontalTextAlignment="End" />
                 </Grid>
 
-                <!-- GO IAQS bands, wrapping to a second row when the screen is narrow. -->
+                <!-- GO AQS bands, wrapping to a second row when the screen is narrow. -->
+                <Label Text="GO AQS levels" FontSize="12" TextColor="Gray" Margin="0,2,0,0" />
                 <FlexLayout x:Name="LegendLayout" Wrap="Wrap" JustifyContent="Start" />
 
                 <Label x:Name="HistorySummaryLabel" FontSize="13" TextColor="Gray" />

@@ -51,8 +51,7 @@ namespace SimpleAranet4Client.Aranet
         //
         // Calibration is deliberately absent. No public client - not Aranet4-Python, not Anrijs'
         // ESP32 client - knows a command that starts a CO2 calibration. The official Aranet app can
-        // start one, so the sensor accepts some command for it, but that byte has never been
-        // reverse engineered, so this app cannot offer calibration. Users have to use the switch on
+        // start one, so the sensor accepts some command for it, but as there is a manual option I decided to leave it out for now. Users have to use the hardware switch on
         // the sensor or the official app; MainPage shows them how.
         //
         // Calibration state is readable though, and could be surfaced without any write: the
