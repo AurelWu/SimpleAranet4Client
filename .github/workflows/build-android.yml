@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write   # needed to attach the APK to a release on tag builds
 
 jobs:
   build:
@@ -34,8 +39,31 @@ jobs:
           -p:AndroidPackageFormat=apk
           --no-restore
 
+      # publish/ contains both the unsigned package and the signed one, so an unfiltered
+      # *.apk picks up two files. Keep only the signed APK and give it a stable name.
+      - name: Stage the signed APK
+        run: |
+          mkdir -p artifact
+          cp SimpleAranet4Client/bin/Release/net10.0-android/publish/*-Signed.apk \
+             artifact/SimpleAranet4Client.apk
+          ls -l artifact
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SimpleAranet4Client-APK
-          path: SimpleAranet4Client/bin/Release/net10.0-android/publish/*.apk
+          path: artifact/SimpleAranet4Client.apk
+          if-no-files-found: error
+
+      # GitHub always zips workflow artifacts on download, whatever they contain, so a
+      # single-file artifact still arrives as a .zip. A release asset does not, so pushing
+      # a tag (git tag v1.0 && git push origin v1.0) gives a direct .apk download link.
+      - name: Attach the APK to a release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME"
+          artifact/SimpleAranet4Client.apk
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
