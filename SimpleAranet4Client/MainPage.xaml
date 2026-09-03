@@ -54,7 +54,29 @@
                             IsEnabled="False"
                             Clicked="OnExportClicked" />
                 </Grid>
-                <GraphicsView x:Name="HistoryChart" HeightRequest="220" />
+                <GraphicsView x:Name="HistoryChart" HeightRequest="220">
+                    <GraphicsView.GestureRecognizers>
+                        <PinchGestureRecognizer PinchUpdated="OnChartPinch" />
+                        <PanGestureRecognizer PanUpdated="OnChartPan" />
+                        <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnChartDoubleTapped" />
+                    </GraphicsView.GestureRecognizers>
+                </GraphicsView>
+
+                <!-- Pinch does nothing with a mouse, so these are the zoom controls on desktop. -->
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="8">
+                    <Button x:Name="ZoomOutButton" Grid.Column="0" Text="-"
+                            WidthRequest="48" IsEnabled="False" Clicked="OnZoomOutClicked" />
+                    <Button x:Name="ZoomInButton" Grid.Column="1" Text="+"
+                            WidthRequest="48" IsEnabled="False" Clicked="OnZoomInClicked" />
+                    <Button x:Name="ZoomResetButton" Grid.Column="2" Text="Reset"
+                            IsEnabled="False" Clicked="OnZoomResetClicked" />
+                    <Label x:Name="ZoomLabel" Grid.Column="3" FontSize="12" TextColor="Gray"
+                           VerticalOptions="Center" HorizontalTextAlignment="End" />
+                </Grid>
+
+                <!-- GO IAQS bands, wrapping to a second row when the screen is narrow. -->
+                <FlexLayout x:Name="LegendLayout" Wrap="Wrap" JustifyContent="Start" />
+
                 <Label x:Name="HistorySummaryLabel" FontSize="13" TextColor="Gray" />
             </VerticalStackLayout>
 

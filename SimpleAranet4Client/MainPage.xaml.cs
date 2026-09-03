@@ -1,5 +1,7 @@
 using Plugin.BLE.Abstractions.Contracts;
 using SimpleAranet4Client.Aranet;
+// Aliased rather than importing the whole namespace, which would make Path ambiguous with System.IO.Path.
+using RoundRectangle = Microsoft.Maui.Controls.Shapes.RoundRectangle;
 using SimpleAranet4Client.Bluetooth;
 using System.Globalization;
 using System.Text;
@@ -45,6 +47,7 @@ namespace SimpleAranet4Client
         bool _busy;
         bool _settingSwitchFromSensor;
         bool _disclaimerHandled;
+        double _lastPanX;
 
         public MainPage()
         {
@@ -59,6 +62,40 @@ namespace SimpleAranet4Client
             foreach (int minutes in Aranet4Client.SupportedIntervalMinutes)
                 IntervalPicker.Items.Add(minutes == 1 ? "1 minute" : $"{minutes} minutes");
             IntervalPicker.SelectedIndex = 0;
+
+            BuildLegend();
+        }
+
+        /// <summary>One swatch and caption per GO IAQS band, from <see cref="GoAqsScale"/>.</summary>
+        void BuildLegend()
+        {
+            foreach (var level in new[] { GoAqsLevel.Good, GoAqsLevel.Moderate, GoAqsLevel.Unhealthy })
+            {
+                var swatch = new Border
+                {
+                    BackgroundColor = GoAqsScale.ColorFor(level),
+                    Stroke = Colors.Transparent,
+                    WidthRequest = 12,
+                    HeightRequest = 12,
+                    VerticalOptions = LayoutOptions.Center,
+                    StrokeShape = new RoundRectangle { CornerRadius = 3 }
+                };
+
+                var caption = new Label
+                {
+                    Text = $"{GoAqsScale.TitleFor(level)}  {GoAqsScale.RangeFor(level)}",
+                    FontSize = 12,
+                    TextColor = Colors.Gray,
+                    VerticalOptions = LayoutOptions.Center
+                };
+
+                LegendLayout.Children.Add(new HorizontalStackLayout
+                {
+                    Spacing = 5,
+                    Margin = new Thickness(0, 2, 16, 2),
+                    Children = { swatch, caption }
+                });
+            }
         }
 
         /// <summary>
@@ -153,8 +190,8 @@ namespace SimpleAranet4Client
                 var history = await _client.ReadCo2HistoryAsync(points, reading, progress);
 
                 _history = history;
-                _chart.Points = history;
-                HistoryChart.Invalidate();
+                _chart.Points = history; // resets the zoom window to the whole series
+                RedrawChart();
                 ExportButton.IsEnabled = history.Count > 0;
 
                 HistorySummaryLabel.Text = history.Count == 0
@@ -162,6 +199,84 @@ namespace SimpleAranet4Client
                     : $"{history.Count} values, {history[0].Timestamp:dd.MM. HH:mm} - {history[^1].Timestamp:dd.MM. HH:mm}   " +
                       $"min {history.Min(p => p.Co2Ppm)} / avg {history.Average(p => p.Co2Ppm):0} / max {history.Max(p => p.Co2Ppm)} ppm";
             });
+        }
+
+        // Chart navigation. No BLE work, so these stay outside RunAsync and keep working while a
+        // sensor read is in flight.
+
+        void OnChartPinch(object? sender, PinchGestureUpdatedEventArgs e)
+        {
+            if (e.Status != GestureStatus.Running || e.Scale <= 0) return;
+
+            // Scale above 1 means fingers spreading, which should show fewer points.
+            _chart.ZoomAt(e.ScaleOrigin.X, 1 / e.Scale);
+            RedrawChart();
+        }
+
+        void OnChartPan(object? sender, PanUpdatedEventArgs e)
+        {
+            // TotalX is measured from the start of the gesture, so pan by the change since last time.
+            switch (e.StatusType)
+            {
+                case GestureStatus.Started:
+                    _lastPanX = 0;
+                    return;
+
+                case GestureStatus.Running:
+                    double width = HistoryChart.Width;
+                    if (width <= 0) return;
+
+                    // Dragging right should reveal earlier values, so the window moves back.
+                    _chart.PanBy(-(e.TotalX - _lastPanX) / width);
+                    _lastPanX = e.TotalX;
+                    RedrawChart();
+                    return;
+            }
+        }
+
+        void OnChartDoubleTapped(object? sender, TappedEventArgs e)
+        {
+            _chart.Reset();
+            RedrawChart();
+        }
+
+        void OnZoomInClicked(object? sender, EventArgs e)
+        {
+            _chart.ZoomAt(0.5, 0.5);
+            RedrawChart();
+        }
+
+        void OnZoomOutClicked(object? sender, EventArgs e)
+        {
+            _chart.ZoomAt(0.5, 2);
+            RedrawChart();
+        }
+
+        void OnZoomResetClicked(object? sender, EventArgs e)
+        {
+            _chart.Reset();
+            RedrawChart();
+        }
+
+        void RedrawChart()
+        {
+            HistoryChart.Invalidate();
+
+            bool hasData = _history.Count > 1;
+            ZoomInButton.IsEnabled = hasData;
+            ZoomOutButton.IsEnabled = hasData && _chart.CanZoomOut;
+            ZoomResetButton.IsEnabled = hasData && _chart.CanZoomOut;
+
+            if (!hasData)
+            {
+                ZoomLabel.Text = string.Empty;
+                return;
+            }
+
+            int shown = (int)Math.Round(_chart.VisibleCount);
+            ZoomLabel.Text = shown >= _history.Count
+                ? $"all {_history.Count} values"
+                : $"{shown} of {_history.Count} values";
         }
 
         async void OnExportClicked(object? sender, EventArgs e)
