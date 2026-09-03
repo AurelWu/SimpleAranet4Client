@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SimpleAranet4Client.MainPage"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+
+            <!-- Connection -->
+            <VerticalStackLayout Spacing="8">
+                <Button x:Name="ConnectButton"
+                        Text="Scan and connect"
+                        Clicked="OnConnectClicked" />
+                <Label x:Name="StatusLabel"
+                       Text="Not connected"
+                       FontSize="13"
+                       TextColor="Gray" />
+            </VerticalStackLayout>
+
+            <!-- Current reading -->
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="CO2" FontAttributes="Bold" />
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="End">
+                        <Label x:Name="Co2Label" Text="--" FontSize="56" FontAttributes="Bold" />
+                        <Label Text="ppm" FontSize="16" VerticalOptions="End" Margin="0,0,0,12" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="DetailsLabel" FontSize="13" TextColor="Gray" />
+                    <Button x:Name="RefreshButton"
+                            Text="Refresh"
+                            IsEnabled="False"
+                            Margin="0,8,0,0"
+                            Clicked="OnRefreshClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- History -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="CO2 history" FontAttributes="Bold" />
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <Picker x:Name="HistoryRangePicker" Grid.Column="0" Title="Range" />
+                    <Button x:Name="HistoryButton"
+                            Grid.Column="1"
+                            Text="Load"
+                            IsEnabled="False"
+                            Clicked="OnLoadHistoryClicked" />
+                    <Button x:Name="ExportButton"
+                            Grid.Column="2"
+                            Text="Export CSV"
+                            IsEnabled="False"
+                            Clicked="OnExportClicked" />
+                </Grid>
+                <GraphicsView x:Name="HistoryChart" HeightRequest="220" />
+                <Label x:Name="HistorySummaryLabel" FontSize="13" TextColor="Gray" />
+            </VerticalStackLayout>
+
+            <!-- Update interval -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Update interval" FontAttributes="Bold" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Picker x:Name="IntervalPicker" Grid.Column="0" Title="Interval" />
+                    <Button x:Name="ApplyIntervalButton"
+                            Grid.Column="1"
+                            Text="Apply"
+                            IsEnabled="False"
+                            Clicked="OnApplyIntervalClicked" />
+                </Grid>
+                <Label x:Name="IntervalLabel" FontSize="13" TextColor="Gray" />
+            </VerticalStackLayout>
+
+            <!-- Smart home integration -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Smart home integration" FontAttributes="Bold" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Label Grid.Column="0"
+                           Text="Let other apps read this sensor"
+                           FontSize="13"
+                           VerticalOptions="Center" />
+                    <Switch x:Name="IntegrationSwitch"
+                            Grid.Column="1"
+                            IsEnabled="False"
+                            Toggled="OnIntegrationToggled" />
+                </Grid>
+                <Label x:Name="IntegrationLabel" FontSize="13" TextColor="Gray" />
+            </VerticalStackLayout>
+
+            <!-- Calibration -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Calibration" FontAttributes="Bold" />
+                <Button x:Name="CalibrationHelpButton"
+                        Text="How to calibrate the sensor"
+                        Clicked="OnCalibrationHelpClicked" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SimpleAranet4Client.DisclaimerPage"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+
+            <Label Text="Before you start" FontSize="22" FontAttributes="Bold" />
+
+            <Label FontSize="14" LineHeight="1.3"
+                   Text="You use this app at your own risk." />
+
+            <Label FontSize="14" LineHeight="1.3"
+                   Text="To the best of my knowledge there is no real risk of bricking the sensor, but I can give no guarantee. There is also always a very small chance that the sensor stops working for an unrelated reason while you happen to be using this app, which can look like the app caused it even though it did not." />
+
+            <Label FontSize="14" LineHeight="1.3"
+                   Text="This app is purely intended as an alternative for when using the official Aranet app is not a viable option." />
+
+            <HorizontalStackLayout Spacing="6">
+                <CheckBox x:Name="AcceptCheckBox"
+                          VerticalOptions="Center"
+                          CheckedChanged="OnAcceptCheckedChanged" />
+                <Label Text="I understand and accept the risk."
+                       FontSize="14"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button x:Name="ContinueButton"
+                        Grid.Column="0"
+                        Text="Continue"
+                        IsEnabled="False"
+                        Clicked="OnContinueClicked" />
+                <Button Grid.Column="1"
+                        Text="Close app"
+                        Clicked="OnCloseClicked" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
