@@ -313,8 +313,10 @@ namespace SimpleAranet4Client
 
             _lastReading = reading;
 
-            Co2Label.Text = reading.Co2Ppm.ToString();
+            Co2Label.Text = reading.Co2Ppm?.ToString() ?? "--";
             DetailsLabel.Text =
+                // No CO2 value means the sensor is busy with something else, usually a calibration.
+                (reading.Co2Ppm == null ? "No CO2 reading right now - the sensor may be calibrating.\n" : "") +
                 $"{reading.TemperatureC:0.0} C   {reading.HumidityPercent} %   " +
                 $"{reading.PressureHpa:0.0} hPa   battery {reading.BatteryPercent} %   " +
                 $"measured {reading.AgoSeconds} s ago";

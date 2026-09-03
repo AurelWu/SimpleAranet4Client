@@ -6,9 +6,13 @@ using System.Diagnostics;
 
 namespace SimpleAranet4Client.Aranet
 {
-    /// <summary>Values from the "current readings, detailed" characteristic.</summary>
+    /// <summary>
+    /// Values from the "current readings, detailed" characteristic.
+    /// <paramref name="Co2Ppm"/> is null when the sensor has no valid CO2 value to give, which is
+    /// what it reports while it is calibrating. The other values stay usable.
+    /// </summary>
     public sealed record Aranet4Reading(
-        int Co2Ppm,
+        int? Co2Ppm,
         double TemperatureC,
         double PressureHpa,
         int HumidityPercent,
@@ -65,6 +69,14 @@ namespace SimpleAranet4Client.Aranet
 
         // Bit 7 of the second settings byte in the sensor state characteristic.
         const byte IntegrationFlag = 0x80;
+
+        // Rather than a measurement, the sensor stores a magic number with the high bit set whenever
+        // it has nothing valid to report - during a calibration, for one. Taken at face value those
+        // read as 32768 ppm and upwards.
+        const int InvalidCo2Flag = 0x8000;
+
+        /// <summary>The raw value, or null when the sensor flagged it as not a real measurement.</summary>
+        static int? ParseCo2(ushort raw) => (raw & InvalidCo2Flag) != 0 ? null : raw;
 
         static readonly TimeSpan IoTimeout = TimeSpan.FromSeconds(5);
 
@@ -164,7 +176,7 @@ namespace SimpleAranet4Client.Aranet
             if (data == null || data.Length < 13) return null;
 
             return new Aranet4Reading(
-                Co2Ppm: BitConverter.ToUInt16(data, 0),
+                Co2Ppm: ParseCo2(BitConverter.ToUInt16(data, 0)),
                 TemperatureC: BitConverter.ToUInt16(data, 2) / 20.0,
                 PressureHpa: BitConverter.ToUInt16(data, 4) / 10.0,
                 HumidityPercent: data[6],
@@ -263,7 +275,7 @@ namespace SimpleAranet4Client.Aranet
             int wanted = Math.Min(maxPoints, total);
             int firstWanted = total - wanted + 1; // 1 based index of the oldest value we want
 
-            // measurement index (1 based) -> ppm
+            // measurement index (1 based) -> ppm, or -1 for a value the sensor flagged as invalid
             var byIndex = new SortedDictionary<int, int>();
             var overallDeadline = DateTime.UtcNow + HistoryOverallTimeout;
 
@@ -311,7 +323,12 @@ namespace SimpleAranet4Client.Aranet
                         {
                             int index = chunkStart + i;
                             if (index >= firstWanted && index <= total)
-                                byIndex[index] = BitConverter.ToUInt16(packet, 10 + i * 2);
+                            {
+                                // Invalid values are kept as -1 rather than skipped: the loop below
+                                // asks again for every index it has not seen, and a value the sensor
+                                // will never fill in would keep it asking.
+                                byIndex[index] = ParseCo2(BitConverter.ToUInt16(packet, 10 + i * 2)) ?? -1;
+                            }
                         }
 
                         if (byIndex.Count > before)
@@ -328,6 +345,7 @@ namespace SimpleAranet4Client.Aranet
                 // The newest stored measurement was taken agoSeconds ago, older ones step back by one interval each.
                 var newest = DateTime.Now.AddSeconds(-agoSeconds);
                 return byIndex
+                    .Where(kv => kv.Value >= 0) // drop what the sensor flagged as no measurement
                     .Select(kv => new Aranet4HistoryPoint(
                         newest.AddSeconds(-(total - kv.Key) * (double)intervalSeconds),
                         kv.Value))
