@@ -34,6 +34,10 @@ Bluetooth access uses [Plugin.BLE](https://github.com/dotnet-bluetooth-le/dotnet
 Aranet and Aranet4 are trademarks of SAF Tehnika. This project is not affiliated with or endorsed
 by them.
 
+## Licence
+
+MIT, see [LICENSE](LICENSE).
+
 ## Disclaimer
 
 Use at your own risk. To the best of my knowledge there is no real risk of bricking the sensor, but

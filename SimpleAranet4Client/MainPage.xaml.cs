@@ -3,6 +3,7 @@ using SimpleAranet4Client.Aranet;
 // Aliased rather than importing the whole namespace, which would make Path ambiguous with System.IO.Path.
 using RoundRectangle = Microsoft.Maui.Controls.Shapes.RoundRectangle;
 using SimpleAranet4Client.Bluetooth;
+using SimpleAranet4Client.Storage;
 using System.Globalization;
 using System.Text;
 
@@ -192,7 +193,7 @@ namespace SimpleAranet4Client
                 _history = history;
                 _chart.Points = history; // resets the zoom window to the whole series
                 RedrawChart();
-                ExportButton.IsEnabled = history.Count > 0;
+                ExportButton.IsEnabled = SaveButton.IsEnabled = history.Count > 0;
 
                 HistorySummaryLabel.Text = history.Count == 0
                     ? "No history returned."
@@ -279,24 +280,35 @@ namespace SimpleAranet4Client
                 : $"{shown} of {_history.Count} values";
         }
 
+        string BuildCsv()
+        {
+            var csv = new StringBuilder("timestamp,co2_ppm\n");
+            foreach (var point in _history)
+            {
+                csv.Append(point.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))
+                   .Append(',')
+                   .Append(point.Co2Ppm.ToString(CultureInfo.InvariantCulture))
+                   .Append('\n');
+            }
+
+            return csv.ToString();
+        }
+
+        string CsvFileName() => $"{Sanitize(_client.DeviceName)}-co2-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+
+        /// <summary>Hands the file to another app. On Android this cannot save it to storage - see OnSaveClicked.</summary>
         async void OnExportClicked(object? sender, EventArgs e)
         {
             if (_history.Count == 0) return;
 
             await RunAsync(async () =>
             {
-                var csv = new StringBuilder("timestamp,co2_ppm\n");
-                foreach (var point in _history)
-                {
-                    csv.Append(point.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))
-                       .Append(',')
-                       .Append(point.Co2Ppm.ToString(CultureInfo.InvariantCulture))
-                       .Append('\n');
-                }
+                string fileName = CsvFileName();
 
-                string fileName = $"{Sanitize(_client.DeviceName)}-co2-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+                // The share sheet needs a real file, and the cache is the right place for one the
+                // receiving app copies straight out of.
                 string path = Path.Combine(FileSystem.CacheDirectory, fileName);
-                await File.WriteAllTextAsync(path, csv.ToString());
+                await File.WriteAllTextAsync(path, BuildCsv());
 
                 try
                 {
@@ -306,14 +318,34 @@ namespace SimpleAranet4Client
                         File = new ShareFile(path)
                     });
 
-                    StatusLabel.Text = $"Exported {_history.Count} values as {fileName}";
+                    StatusLabel.Text = $"Shared {_history.Count} values as {fileName}";
                 }
                 catch (Exception ex)
                 {
-                    // Sharing is not available everywhere (unpackaged Windows, for example) - the file is written either way.
+                    // Sharing is not available everywhere, unpackaged Windows for example.
                     System.Diagnostics.Debug.WriteLine($"Share failed: {ex.Message}");
-                    StatusLabel.Text = $"Saved {_history.Count} values to {path}";
+                    StatusLabel.Text = "Sharing is not available here - use Save CSV instead.";
                 }
+            });
+        }
+
+        async void OnSaveClicked(object? sender, EventArgs e)
+        {
+            if (_history.Count == 0) return;
+
+            await RunAsync(async () =>
+            {
+                if (!CsvSaver.IsSupported)
+                {
+                    StatusLabel.Text = "Saving is not available here - use Share CSV and pick Files.";
+                    return;
+                }
+
+                string? where = await CsvSaver.SaveAsync(CsvFileName(), BuildCsv());
+
+                StatusLabel.Text = where == null
+                    ? "Not saved."
+                    : $"Saved {_history.Count} values to {where}";
             });
         }
 

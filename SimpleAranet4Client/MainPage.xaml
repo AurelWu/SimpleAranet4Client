@@ -41,16 +41,21 @@
             <!-- History -->
             <VerticalStackLayout Spacing="8">
                 <Label Text="CO2 history" FontAttributes="Bold" />
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
                     <Picker x:Name="HistoryRangePicker" Grid.Column="0" Title="Range" />
                     <Button x:Name="HistoryButton"
                             Grid.Column="1"
                             Text="Load"
                             IsEnabled="False"
                             Clicked="OnLoadHistoryClicked" />
-                    <Button x:Name="ExportButton"
+                    <Button x:Name="SaveButton"
                             Grid.Column="2"
-                            Text="Export CSV"
+                            Text="Save CSV"
+                            IsEnabled="False"
+                            Clicked="OnSaveClicked" />
+                    <Button x:Name="ExportButton"
+                            Grid.Column="3"
+                            Text="Share CSV"
                             IsEnabled="False"
                             Clicked="OnExportClicked" />
                 </Grid>
